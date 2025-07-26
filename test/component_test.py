@@ -1,28 +1,28 @@
 import pytest
 
-from dmlx.component import Component
+from dmlx.component import Component, parse_locator
 
 
 def test_parse_locator() -> None:
-    path, kwargs = Component.parse_locator('a.b:c?x=0;#y="1";z = "2"')
+    path, kwargs = parse_locator('a.b:c?x=0;#y="1";z = "2"')
     assert path == "a.b:c"
     assert kwargs == {"x": 0, "z": "2"}
 
 
 def test_parse_locator_wo_params() -> None:
-    path, kwargs = Component.parse_locator("blah")
+    path, kwargs = parse_locator("blah")
     assert path == "blah"
     assert kwargs == {}
 
 
 def test_parse_locator_with_empty_params() -> None:
-    path, kwargs = Component.parse_locator("blah?")
+    path, kwargs = parse_locator("blah?")
     assert path == "blah"
     assert kwargs == {}
 
 
 def test_parse_locator_multiline() -> None:
-    path, kwargs = Component.parse_locator(
+    path, kwargs = parse_locator(
         """
         a.b:c?
             # x = 0;
@@ -40,9 +40,9 @@ def test_load_simple() -> None:
     model_component = Component()
 
     with pytest.raises(RuntimeError):
-        model_component.load("test_module.model.foo?threshold=5")
+        model_component("test_module.model.foo?threshold=5")
 
-    model = model_component.load("test_module.model.foo:Model?threshold=5")
+    model = model_component("test_module.model.foo:Model?threshold=5")
     assert isinstance(model, Model)
     assert model.threshold == 5
     assert model.predict([4, 5, 6]) == [0.0, 1.0, 1.0]
@@ -51,18 +51,14 @@ def test_load_simple() -> None:
 def test_load_complex() -> None:
     from test_module.model.bar import Model
 
-    model_component = Component(
-        module_base="test_module.model",
-        default_factory_name="Model",
-    )
-
-    @model_component.set_postprocessor
     def postprocess(model: Model) -> Model:
         assert model.threshold == 0.5
         new_model = Model()
         new_model.threshold = 1.0
         return new_model
 
-    model = model_component.load("bar")
+    model_component = Component("test_module.model", "Model", postprocess)
+
+    model = model_component("bar")
     assert isinstance(model, Model)
     assert model.predict([0.1, 1.0, 10.0]) == [0.0, 1.0, 1.0]

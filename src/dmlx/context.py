@@ -1,3 +1,4 @@
+from functools import cache
 from inspect import cleandoc
 
 import click
@@ -76,3 +77,25 @@ def option(*args, **kwargs) -> property:
         option (click.Option): The created option.
     """
     return get_current_experiment().option(*args, **kwargs)
+
+
+def component(locator_source: property | str, *args, **kwargs) -> property:
+    """Create a component property that acts as a component factory.
+    (The extra args are passed to `Component` to create the underlying factory.)
+    """
+    from .component import Component
+
+    component_factory = Component(*args, **kwargs)
+
+    @cache
+    def component_getter(self) -> object:
+        if isinstance(locator_source, property):
+            assert locator_source.fget is not None, (
+                "Cannot get the component locator from the given property."
+            )
+            locator = locator_source.fget(self)
+        else:
+            locator = getattr(self, locator_source)
+        return component_factory(locator)
+
+    return property(component_getter)
