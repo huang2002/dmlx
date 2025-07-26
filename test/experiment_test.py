@@ -30,12 +30,26 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with experiment.context():
         from test_module.trainer import Trainer
 
-    main_invoked = False
+        class TestClass:
+            test_value = cast(
+                int, experiment.option("--test-value", type=int, default=0)
+            )
+
+    with pytest.raises(RuntimeError):
+        experiment.run()
+    with pytest.raises(RuntimeError):
+        experiment.args
+    with pytest.raises(
+        RuntimeError,
+        match="Params cannot be accessed before experiment run or loading!",
+    ):
+        TestClass().test_value
+
+    main_finished = False
 
     @experiment.main()
     def main(**args) -> None:
-        nonlocal main_invoked
-        main_invoked = True
+        nonlocal main_finished
 
         assert experiment.args == args
         assert args == {
@@ -43,13 +57,19 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "dataset": "blah:BlahDataset",
             "dataset_size": 5,
             "epochs": 8,
+            "test_value": 0,
             "flag": False,
         }
 
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError):
             experiment.option("--should-fail")
 
         experiment.init()
+
+        with pytest.raises(RuntimeError):
+            experiment.name = "blah"
+        with pytest.raises(RuntimeError):
+            experiment.meta_file_path = "blah"
 
         trainer = Trainer()
         assert trainer.dataset_size == 5
@@ -71,6 +91,8 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "epochs": 8,
         }
 
+        main_finished = True
+
     with pytest.raises(ValueError):
 
         @experiment.main()
@@ -79,12 +101,17 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     experiment.option("--flag", is_flag=True)
 
     assert experiment.command is not None
-    experiment.command.main(
-        ["baz?dx=0.5", "--dataset", "blah:BlahDataset", "-e", "8", "-s", "5"],
-        standalone_mode=False,
-    )
+    cli_args = ["baz?dx=0.5", "--dataset", "blah:BlahDataset", "-e", "8", "-s", "5"]
+    experiment.command.main(cli_args, standalone_mode=False)
 
-    assert main_invoked
+    assert main_finished
+
+    with pytest.raises(RuntimeError):
+        experiment.command.main(cli_args, standalone_mode=False)
+    with pytest.raises(RuntimeError):
+        experiment.run()
+    with pytest.raises(RuntimeError):
+        experiment.load()
 
     assert experiment.path.exists()
     assert experiment.path.is_dir()
@@ -132,5 +159,7 @@ def test_experiment_cli_and_load(
     experiment.load()
     assert experiment.meta == loaded_meta
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         experiment.name = "not_allowed"
+    with pytest.raises(RuntimeError):
+        experiment.load()

@@ -5,17 +5,20 @@ from dmlx.experiment import Experiment
 
 
 def test_experiment_context() -> None:
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         get_current_experiment()
 
     experiment = Experiment()
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         get_current_experiment()
 
     with experiment.context() as context:
         assert isinstance(context, ExperimentContext)
         assert get_current_experiment() is experiment
+        with pytest.raises(RuntimeError):
+            with experiment.context():
+                pass  # pragma: no coverage
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError):
         get_current_experiment()

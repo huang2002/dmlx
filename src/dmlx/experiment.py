@@ -108,9 +108,8 @@ class Experiment:
 
     @name.setter
     def name(self, name: str) -> None:
-        assert not self.__meta_frozen, (
-            "Cannot update experiment name now! " + META_FROZEN_DOC
-        )
+        if self.__meta_frozen:
+            raise RuntimeError("Cannot update experiment name now! " + META_FROZEN_DOC)
         self.__name = name
 
     @property
@@ -120,20 +119,20 @@ class Experiment:
 
     @meta_file_path.setter
     def meta_file_path(self, path: Path | str) -> None:
-        assert not self.__meta_frozen, (
-            "Cannot update meta file path now! " + META_FROZEN_DOC
-        )
+        if self.__meta_frozen:
+            raise RuntimeError("Cannot update meta file path now! " + META_FROZEN_DOC)
         self.__meta_file_path = Path(path)
 
     @property
     def args(self) -> dict[str, object]:
         """Parsed command args."""
-        assert self.__args is not None, (
-            "Args are unavailable before experiment run or loading! If you are "
-            "conducting a new experiment, make sure that command args are only "
-            "used after calling `experiment.run()`. If you are loading an existing "
-            "experiment, access command args after `experiment.load()`."
-        )
+        if self.__args is None:
+            raise RuntimeError(
+                "Args are unavailable before experiment run or loading! If you are "
+                "conducting a new experiment, make sure that command args are only "
+                "used after calling `experiment.run()`. If you are loading an existing "
+                "experiment, access command args after `experiment.load()`."
+            )
         return self.__args
 
     @property
@@ -195,8 +194,10 @@ class Experiment:
         def decorator(callback: Callable) -> click.Command:
             @wraps(callback)
             def wrapper(*args, **kwargs) -> Any:
-                assert self.__args is None, "The experiment has been run or loaded!"
+                if self.__args is not None:
+                    raise RuntimeError("The experiment has been run or loaded!")
                 self.__args = kwargs
+                self.__meta_frozen = True
                 return callback(*args, **kwargs)
 
             click_decorator = click.command(*command_args, **command_kwargs)
@@ -213,10 +214,10 @@ class Experiment:
         Returns:
             param (click.Parameter): The created param.
         """
-
-        assert self.__args is None, (
-            "Params must be declared before experiment run or loading!"
-        )
+        if self.__args is not None:
+            raise RuntimeError(
+                "Params must be declared before experiment run or loading!"
+            )
         param = cls(args, **kwargs)
         if self.command:
             self.command.params.append(param)
@@ -224,15 +225,16 @@ class Experiment:
             self.__pending_params.append(param)
 
         def getter(_self: Any) -> Any:
-            assert self.args is not None, (
-                "Params cannot be accessed before experiment run or loading! "
-                "If you are conducting a new experiment, make sure that the "
-                "params(command arguments or options) are only accessed after "
-                "calling `experiment.run()`. If you are loading an existing "
-                "experiment, access the params after `experiment.load()`."
-            )
+            if self.__args is None:
+                raise RuntimeError(
+                    "Params cannot be accessed before experiment run or loading! "
+                    "If you are conducting a new experiment, make sure that the "
+                    "params(command arguments or options) are only accessed after "
+                    "calling `experiment.run()`. If you are loading an existing "
+                    "experiment, access the params after `experiment.load()`."
+                )
             assert param.name is not None, "The param name is unavailable!"
-            return self.args[param.name]
+            return self.__args[param.name]
 
         return property(getter)
 
@@ -266,18 +268,19 @@ class Experiment:
         Returns:
             return_value (object): The value returned by the command.
         """
-        assert self.command is not None, (
-            "The experiment command has not been defined!" + COMMAND_DEFINING_DOC
-        )
-
-        self.__meta_frozen = True
-
+        if self.command is None:
+            raise RuntimeError(
+                "The experiment command has not been defined!" + COMMAND_DEFINING_DOC
+            )
+        if self.__args is not None:
+            raise RuntimeError("The experiment has been run or loaded!")
         with self.context():
             return self.command(*args, **kwargs)
 
     def load(self, **json_options: Any) -> None:
         """Load the experiment from an existing archive."""
-        assert self.__args is None, "The experiment has already been run or loaded!"
+        if self.__args is not None:
+            raise RuntimeError("The experiment has already been run or loaded!")
 
         with (self.path / self.meta_file_path).open("r") as file:
             meta = cast(Experiment.Meta, json.load(file, **json_options))

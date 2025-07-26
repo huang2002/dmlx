@@ -14,10 +14,11 @@ class ExperimentContext:
         self.experiment = experiment
 
     def __enter__(self) -> "ExperimentContext":
-        assert ExperimentContext._current_experiment is None, (
-            "Experiment contexts cannot be stacked! That is, you cannot enter "
-            "an experiment context when another one is active."
-        )
+        if ExperimentContext._current_experiment is not None:
+            raise RuntimeError(
+                "Experiment contexts cannot be stacked! That is, you cannot enter "
+                "an experiment context when another one is active."
+            )
         ExperimentContext._current_experiment = self.experiment
         return self
 
@@ -27,17 +28,20 @@ class ExperimentContext:
 
 def get_current_experiment() -> Experiment:
     """Get the currently active experiment."""
-    assert ExperimentContext._current_experiment is not None, cleandoc(
-        """
-        Current experiment is unavailable! Typically, it should be available inside an experiment context:
+    if ExperimentContext._current_experiment is None:
+        raise RuntimeError(
+            cleandoc(
+                """
+                Current experiment is unavailable! Typically, it should be available inside an experiment context:
 
-            ```python
-            with experiment.context():
-                from model import MyModel
-                from dataset import get_dataset
-            ```
-        """
-    )
+                    ```python
+                    with experiment.context():
+                        from model import MyModel
+                        from dataset import get_dataset
+                    ```
+                """
+            )
+        )
     return ExperimentContext._current_experiment
 
 
