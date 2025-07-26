@@ -53,14 +53,14 @@ class Experiment:
         orig_argv: list[str]
         args: dict[str, object]
 
-    command: click.Command | None
-
+    __command: click.Command | None
     __birth: datetime
     __name: str
     __meta_file_path: Path
     __args: dict[str, object] | None
     __meta_frozen: bool
     __meta: Meta | None
+    __pending_params: list[click.Parameter]
 
     def __init__(
         self,
@@ -69,18 +69,32 @@ class Experiment:
         name_template_variables: NameTemplateVariables | None = None,
         meta_file_path: Path | str | None = None,
     ) -> None:
-        self.command = None
+        self.__command = None
         self.__birth = datetime.now()
         self.__meta_file_path = Path(meta_file_path or self.DEFAULT_META_FILE_PATH)
         self.__args = None
         self.__meta_frozen = False
         self.__meta = None
+        self.__pending_params = []
 
         if name_template is None:
             name_template = self.DEFAULT_NAME_TEMPLATE
         if name_template_variables is None:
             name_template_variables = self.get_name_template_variables(self.__birth)
         self.__name = name_template.format_map(name_template_variables)
+
+    @property
+    def command(self) -> click.Command | None:
+        return self.__command
+
+    @command.setter
+    def command(self, command: click.Command) -> None:
+        if self.__command:
+            raise ValueError("Experiment command cannot be set twice!")
+        if len(self.__pending_params) > 0:
+            command.params.extend(self.__pending_params)
+            self.__pending_params.clear()
+        self.__command = command
 
     @property
     def birth(self) -> datetime:
@@ -186,8 +200,9 @@ class Experiment:
                 return callback(*args, **kwargs)
 
             click_decorator = click.command(*command_args, **command_kwargs)
-            self.command = cast(click.Command, click_decorator(wrapper))
-            return self.command
+            command = cast(click.Command, click_decorator(wrapper))
+            self.command = command
+            return command
 
         return decorator
 
@@ -199,15 +214,14 @@ class Experiment:
             param (click.Parameter): The created param.
         """
 
-        assert self.command is not None, (
-            "Params must be declared after the defining the command! "
-            + COMMAND_DEFINING_DOC
-        )
         assert self.__args is None, (
             "Params must be declared before experiment run or loading!"
         )
         param = cls(args, **kwargs)
-        self.command.params.append(param)
+        if self.command:
+            self.command.params.append(param)
+        else:
+            self.__pending_params.append(param)
 
         def getter(_self: Any) -> Any:
             assert self.args is not None, (

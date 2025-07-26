@@ -27,8 +27,8 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
     experiment = Experiment()
 
-    with pytest.raises(AssertionError):
-        experiment.option("--should-fail")
+    with experiment.context():
+        from test_module.trainer import Trainer
 
     main_invoked = False
 
@@ -43,6 +43,7 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "dataset": "blah:BlahDataset",
             "dataset_size": 5,
             "epochs": 8,
+            "flag": False,
         }
 
         with pytest.raises(AssertionError):
@@ -70,8 +71,12 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "epochs": 8,
         }
 
-    with experiment.context():
-        from test_module.trainer import Trainer
+    with pytest.raises(ValueError):
+
+        @experiment.main()
+        def should_fail(**args) -> None: ...
+
+    experiment.option("--flag", is_flag=True)
 
     assert experiment.command is not None
     experiment.command.main(
