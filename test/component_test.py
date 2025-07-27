@@ -1,6 +1,7 @@
 import pytest
 
 from dmlx.component import Component, parse_locator
+from dmlx.property import component
 
 
 def test_parse_locator() -> None:
@@ -62,3 +63,12 @@ def test_load_complex() -> None:
     model = model_component("bar")
     assert isinstance(model, Model)
     assert model.predict([0.1, 1.0, 10.0]) == [0.0, 1.0, 1.0]
+
+
+def test_component_cache() -> None:
+    class C:
+        LOCATOR = "test_module.model.bar:Model"
+        component = component("LOCATOR")
+
+    c = C()
+    assert c.component is c.component
