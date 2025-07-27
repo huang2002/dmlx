@@ -2,7 +2,7 @@ from typing import cast
 
 import click
 
-from dmlx.context import argument, component, option, param
+from dmlx.property import argument, component, option, param
 
 
 class Trainer:
