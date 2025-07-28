@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Declarative machine learning experiments."
 readme = "README.md"
 authors = [{ name = "3h" }]
+license = "ISC"
 requires-python = ">=3.10"
 dependencies = ["click>=8.2.1"]
 
