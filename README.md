@@ -174,5 +174,6 @@ An example ML codebase using `dmlx` is illustrated below:
 
 ## Links
 
-- [License (ISC)](./LICENSE)
+- [Repository](https://github.com/huang2002/dmlx)
 - [API Reference](https://github.com/huang2002/dmlx/wiki)
+- [License (ISC)](https://github.com/huang2002/dmlx/blob/main/LICENSE)
