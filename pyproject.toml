@@ -7,6 +7,24 @@ authors = [{ name = "3h" }]
 license = "ISC"
 requires-python = ">=3.10"
 dependencies = ["click>=8.2.1"]
+keywords = [
+    "declarative",
+    "machine learning",
+    "experiment",
+    "component",
+    "parameter",
+    "argument",
+    "option",
+    "management",
+    "command line interface",
+    "cli",
+]
+
+[project.urls]
+Homepage = "https://github.com/huang2002/dmlx"
+Documentation = "https://github.com/huang2002/dmlx/blob/main/README.md"
+Repository = "https://github.com/huang2002/dmlx.git"
+Changelog = "https://github.com/huang2002/dmlx/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
