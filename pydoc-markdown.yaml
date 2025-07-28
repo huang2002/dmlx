@@ -1,0 +1,40 @@
+loaders:
+- type: python
+  search_path:
+  - ./src
+renderer:
+  type: mkdocs
+  output_directory: docs
+  content_directory_name: '.'
+  pages:
+  - title: dmlx.component
+    name: Component
+    contents:
+    - dmlx.component.*
+  - title: dmlx.context
+    name: Context
+    contents:
+    - dmlx.context.*
+  - title: dmlx.experiment
+    name: Experiment
+    contents:
+    - dmlx.experiment.*
+  - title: dmlx.property
+    name: Property
+    contents:
+    - dmlx.property.*
+  markdown:
+    insert_header_anchors: false
+    add_module_prefix: true
+    add_method_class_prefix: true
+    add_member_class_prefix: true
+    render_page_title: true
+    render_module_header: false
+    use_fixed_header_levels: true
+    header_level_by_type:
+      Module: 1
+      Function: 2
+      Variable: 2
+      Class: 2
+      Method: 3
+    format_code: false

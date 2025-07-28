@@ -37,7 +37,12 @@ packages = ["src/dmlx"]
 packages = ["src/dmlx"]
 
 [dependency-groups]
-dev = ["pytest>=8.4.1", "pytest-cov>=6.2.1", "ruff>=0.12.4"]
+dev = [
+    "mkdocstrings[python]>=0.30.0",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.4",
+]
 
 [tool.ruff.lint]
 select = ["I", "F"]
