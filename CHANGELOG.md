@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Fix test workflow.
+
 ## 0.2.0
 
 - Add `experiment.before_main`.
