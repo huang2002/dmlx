@@ -270,7 +270,7 @@ class Experiment:
         """
         if self.command is None:
             raise RuntimeError(
-                "The experiment command has not been defined!" + COMMAND_DEFINING_DOC
+                "The experiment command has not been defined! " + COMMAND_DEFINING_DOC
             )
         if self.__args is not None:
             raise RuntimeError("The experiment has been run or loaded!")
