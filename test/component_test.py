@@ -35,7 +35,7 @@ def test_parse_locator_multiline() -> None:
     assert kwargs == {"y": "1", "z": [2.0, True]}
 
 
-def test_load_simple() -> None:
+def test_load_simple(test_module: None) -> None:
     from test_module.model.foo import Model
 
     model_component = Component()
@@ -49,7 +49,7 @@ def test_load_simple() -> None:
     assert model.predict([4, 5, 6]) == [0.0, 1.0, 1.0]
 
 
-def test_load_complex() -> None:
+def test_load_complex(test_module: None) -> None:
     from test_module.model.bar import Model
 
     def postprocess(model: Model) -> Model:
@@ -65,7 +65,7 @@ def test_load_complex() -> None:
     assert model.predict([0.1, 1.0, 10.0]) == [0.0, 1.0, 1.0]
 
 
-def test_component_cache() -> None:
+def test_component_cache(test_module: None) -> None:
     class C:
         LOCATOR = "test_module.model.bar:Model"
         component = component("LOCATOR")

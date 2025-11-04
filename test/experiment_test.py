@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import cast
@@ -39,9 +38,10 @@ def test_experiment_before_main() -> None:
     experiment.command.main(["--tag=blah"], standalone_mode=False)
 
 
-def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_experiment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_module: None
+) -> None:
     monkeypatch.chdir(tmp_path)
-    sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
     experiment = Experiment()
 
@@ -145,7 +145,7 @@ def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_experiment_cli_and_load(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_module: None
 ) -> None:
     import subprocess
 
