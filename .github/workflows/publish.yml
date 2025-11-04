@@ -26,9 +26,9 @@ jobs:
           enable-cache: true
       - name: Build
         run: uv build
-      # - name: Test (wheel)
-      #   run: uv run --isolated --no-project --with dist/*.whl pytest
-      # - name: Test (sdist)
-      #   run: uv run --isolated --no-project --with dist/*.tar.gz pytest
+      - name: Test wheel
+        run: uv run --isolated --no-project --with dist/*.whl pytest
+      - name: Test sdist
+        run: uv run --isolated --no-project --with dist/*.tar.gz pytest
       - name: Publish
         run: uv publish
