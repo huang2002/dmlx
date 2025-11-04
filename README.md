@@ -107,7 +107,7 @@ An example ML codebase using `dmlx` is illustrated below:
     with experiment.context():
         from approach import Approach
 
-    @experiment.main
+    @experiment.main()
     def main(**args):
         experiment.init()
 
@@ -157,7 +157,7 @@ An example ML codebase using `dmlx` is illustrated below:
         from approach import Approach
 
 
-    @experiment.main
+    @experiment.main()
     def main(**args):
         print("Loaded args:", args)
         print("Loaded meta:", experiment.meta)
