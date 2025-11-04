@@ -53,6 +53,7 @@ class Experiment:
         orig_argv: list[str]
         args: dict[str, object]
 
+    __hook_before_main: Callable[..., None] | None
     __command: click.Command | None
     __birth: datetime
     __name: str
@@ -69,6 +70,7 @@ class Experiment:
         name_template_variables: NameTemplateVariables | None = None,
         meta_file_path: Path | str | None = None,
     ) -> None:
+        self.__hook_before_main = None
         self.__command = None
         self.__birth = datetime.now()
         self.__meta_file_path = Path(meta_file_path or self.DEFAULT_META_FILE_PATH)
@@ -82,6 +84,32 @@ class Experiment:
         if name_template_variables is None:
             name_template_variables = self.get_name_template_variables(self.__birth)
         self.__name = name_template.format_map(name_template_variables)
+
+    @property
+    def hook_before_main(self) -> Callable[..., None] | None:
+        return self.__hook_before_main
+
+    @hook_before_main.setter
+    def hook_before_main(self, hook: Callable[..., None] | None) -> None:
+        if self.__meta_frozen:
+            raise RuntimeError(
+                "`hook_before_main` cannot be set now! " + META_FROZEN_DOC
+            )
+        self.__hook_before_main = hook
+
+    def before_main(self) -> Callable[[Callable[..., None]], Callable[..., None]]:
+        """Register a hook function to be invoked before the main function.
+        The function will receive the same input as the main function and
+        have the final chance to modify experiment meta data. For example,
+        this function can be utilized to modify experiment name according to
+        command line args.
+        """
+
+        def decorator(hook: Callable[..., None]) -> Callable[..., None]:
+            self.hook_before_main = hook
+            return hook
+
+        return decorator
 
     @property
     def command(self) -> click.Command | None:
@@ -196,6 +224,8 @@ class Experiment:
             def wrapper(*args, **kwargs) -> Any:
                 if self.__args is not None:
                     raise RuntimeError("The experiment has been run or loaded!")
+                if self.__hook_before_main is not None:
+                    self.__hook_before_main(*args, **kwargs)
                 self.__args = kwargs
                 self.__meta_frozen = True
                 return callback(*args, **kwargs)

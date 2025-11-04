@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import cast
 
+import click
 import pytest
 
 from dmlx.experiment import Experiment
@@ -19,6 +20,23 @@ def test_experiment_path() -> None:
     experiment = Experiment(name_template_variables=name_template_variables)
     assert experiment.name == expected_name
     assert experiment.path == Experiment.BASE_DIR / expected_name
+
+
+def test_experiment_before_main() -> None:
+    experiment = Experiment()
+
+    @experiment.before_main()
+    def before_main(**args) -> None:
+        experiment.name += "_" + args["tag"]
+
+    @experiment.main()
+    @click.option("--tag")
+    def main(**args) -> None:
+        assert experiment.name.endswith("_blah")
+        assert experiment.path.name.endswith("_blah")
+
+    assert experiment.command is not None
+    experiment.command.main(["--tag=blah"], standalone_mode=False)
 
 
 def test_experiment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
